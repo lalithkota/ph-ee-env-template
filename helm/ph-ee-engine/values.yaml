@@ -101,7 +101,7 @@ zeebe-cluster-helm:
 
 # payment hub Operate, ES and Kibana
 zeebe-operate-helm:
-  enabled: false
+  enabled: true
   image:
     repository: camunda/operate
     tag: 1.1.0
@@ -109,8 +109,8 @@ zeebe-operate-helm:
   global:
     zeebe: "zeebe-zeebe"
     elasticsearch:
-      host: "zeebe-elasticsearch"
-      clusterName: "zeebe-elasticsearch"
+      host: "ph-ee-elasticsearch"
+      clusterName: "ph-ee-elasticsearch"
 
 elasticsearch:
   enabled: true
@@ -123,77 +123,38 @@ elasticsearch:
     elasticsearch.yml: |
       xpack.security.enabled: false
       xpack.security.transport.ssl.enabled: false
-      xpack.security.transport.ssl.verification_mode: certificate
-      xpack.security.transport.ssl.keystore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12
-      xpack.security.transport.ssl.truststore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12
       xpack.security.http.ssl.enabled: false
-      xpack.security.http.ssl.truststore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12
-      xpack.security.http.ssl.keystore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12
-  secretMounts:
-    - name: elastic-certificates
-      secretName: elastic-certificates
-      path: /usr/share/elasticsearch/config/certs
-  extraEnvs:
-    - name: ELASTIC_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: elastic-credentials
-          key: password
+  secretMounts: []
+  extraEnvs: []
 
 
 kibana:
   enabled: true
   imageTag: 7.16.3
   fullnameOverride: "ph-ee-kibana"
-  elasticsearchHosts: "https://ph-ee-elasticsearch:9200/"
-  protocol: https
+  elasticsearchHosts: "http://ph-ee-elasticsearch:9200/"
+  protocol: http
   kibanaConfig:
     kibana.yml: |
       monitoring.enabled: false
-      xpack.encryptedSavedObjects.encryptionKey: 5f4dcc3b5aa765d61d8327deb882cf99
-      server.ssl:
-        enabled: false
-        key: /usr/share/kibana/config/certs/elastic-certificate.pem
-        certificate: /usr/share/kibana/config/certs/elastic-certificate.pem
-      xpack.security.encryptionKey: ${KIBANA_ENCRYPTION_KEY}
-      elasticsearch.ssl:
-        certificateAuthorities: /usr/share/kibana/config/certs/elastic-certificate.pem
-        verificationMode: certificate
-  secretMounts:
-    - name: elastic-certificate-pem
-      secretName: elastic-certificate-pem
-      path: /usr/share/kibana/config/certs
-  extraEnvs:
-    - name: 'ELASTICSEARCH_USERNAME'
-      valueFrom:
-        secretKeyRef:
-          name: elastic-credentials
-          key: username
-    - name: 'ELASTICSEARCH_PASSWORD'
-      valueFrom:
-        secretKeyRef:
-          name: elastic-credentials
-          key: password
-    - name: 'KIBANA_ENCRYPTION_KEY'
-      valueFrom:
-        secretKeyRef:
-          name: kibana
-          key: encryptionkey
-
+      xpack.security.enabled: false
+      server.ssl.enabled: false
+  secretMounts: []
+  extraEnvs: []
 
 channel:
   enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-connector-channel"
   imageTag: "v1.1.0"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: ""
+  SPRING_PROFILES_ACTIVE: "bb"
   LOGGING_LEVEL_ROOT: "INFO"
   LOGGING_PATTERN_CONSOLE: "%d{dd-MM-yyyy HH:mm:ss.SSS} %magenta([%thread]) %highlight(%-5level) %logger.%M - %msg%n"
   TRANSACTION_ID_LENGTH: 20
-  DFSPIDS: ""
-  hostname: ""
-  stub_hostname: ""
+  DFSPIDS: "tn03,tn04"
+  hostname: "ph-channel-dev.openg2p.mosip.net"
+  stub_hostname: "ph-channel-gsma-dev.openg2p.mosip.net"
   limits:
     memory: "768M"
     cpu: "500m"
@@ -201,7 +162,7 @@ channel:
     memory: "768M"
     cpu: "100m"
   ingress:
-    enabled: true
+    enabled: false
     path: "/channel"
     annotations: {}
     backend: {}
@@ -240,20 +201,22 @@ operationsmysql:
       password: "password"
       rootPassword: "4ET6ywqlGt"
   initdbScripts:
-      setup.sql: |-
-        CREATE DATABASE IF NOT EXISTS phdefault;
-        CREATE DATABASE IF NOT EXISTS messagegateway;
-        GRANT ALL ON *.* TO 'root'@'%';
-        GRANT ALL PRIVILEGES ON messagegateway.* TO 'mifos';
-        GRANT ALL PRIVILEGES ON phdefault.* TO 'mifos';
+    setup.sql: |-
+      CREATE DATABASE messagegateway;
+      CREATE DATABASE `tn03`;
+      CREATE DATABASE `tn04`;
+      GRANT ALL PRIVILEGES ON `tn03`.* TO 'mifos';
+      GRANT ALL PRIVILEGES ON `tn04`.* TO 'mifos';
+      GRANT ALL ON *.* TO 'root'@'%';
+      GRANT ALL PRIVILEGES ON messagegateway.* TO 'mifos';
 
 ph_ee_connector_ams_mifos:
   enabled: false
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-connector-ams-mifos"
   imageTag: "v1.0.0"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: ""
+  SPRING_PROFILES_ACTIVE: "fin12,bb"
   limits:
     memory: "512M"
     cpu: "500m"
@@ -264,12 +227,12 @@ ph_ee_connector_ams_mifos:
     annotations: {}
 
 ph_ee_connector_mojaloop:
-  enabled: false
+  enabled: true
   replicas: 1
-  image: ""
-  imageTag: "v1.0.0"
+  image: "lalithkota/ph-ee-connector-mojaloop-java"
+  imageTag: "v1.0.0-gradle"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: ""
+  SPRING_PROFILES_ACTIVE: "bb"
   limits:
     memory: "512M"
     cpu: "500m"
@@ -282,14 +245,14 @@ ph_ee_connector_mojaloop:
 operations_app:
   enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-operations-app"
   imageTag: "v1.0.6"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: ""
+  SPRING_PROFILES_ACTIVE: "bb"
   LOGGING_LEVEL_ROOT: "INFO"
   LOGGING_PATTERN_CONSOLE: "%d{dd-MM-yyyy HH:mm:ss.SSS} %magenta([%thread]) %highlight(%-5level) %logger.%M - %msg%n"
-  hostname: ""
-  tenants: ""
+  hostname: "ph-opsapp-dev.openg2p.mosip.net"
+  tenants: "tn03,tn04"
   token_client_channel_secret: ""
   datasource:
       username: "mifos"
@@ -305,20 +268,21 @@ operations_app:
     cpu: "100m"
   ingress:
     enabled: false
-    path: "/opsapp"
+    path: "/"
     annotations: {}
     backend: {}
   deployment:
     annotations: {}
 
+
 operations_web:
   enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-operations-web"
   imageTag: "v1.2.0"
   imagePullPolicy: "Always"
-  hostname: ""
-  webhost: ""
+  hostname: "ph-ops-dev.openg2p.mosip.net"
+  webhost: "ph-ops-dev.openg2p.mosip.net"
   limits:
     memory: "512M"
     cpu: "500m"
@@ -440,11 +404,15 @@ paygops_connector:
 messagegateway:
   enabled: false
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-message-gateway"
   imageTag: "v1.0.0"
+  secret:
+    value:
+      api_key: ""
+      project_id: ""
   imagePullPolicy: "Always"
   LOGGING_LEVEL_ROOT: "INFO"
-  hostname: ""
+  hostname: "ph-messagegateway-dev.openg2p.mosip.net"
   CALLBACKCONFIG_HOST: "ph-ee-connector-notifications"
   HOSTCONFIG_HOST: "message-gateway"
   MYSQL_USERNAME: "mifos"
@@ -460,33 +428,29 @@ messagegateway:
     cpu: "100m"
   ingress:
     enabled: false
-    path: "/messages"
+    path: "/"
     annotations: {}
     backend: {}
-  secret:
-    name: ""
-    key:
-      telerivet_api_key: ""
   deployment:
     annotations: {}
 
 notifications:
-  enabled: false
+  enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-notifications"
   imageTag: "v1.0.1"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: ""
+  SPRING_PROFILES_ACTIVE: "bb"
   LOGGING_LEVEL_ROOT: "INFO"
-  hostname: ""
+  hostname: "ph-notifications-dev.openg2p.mosip.net"
   zeebe_broker_contactpoint: "zeebe-zeebe-gateway:26500"
   MESSAGEGATEWAYCONFIG_HOST: "message-gateway"
   NOTIFICATION_LOCAL_HOST: "ph-ee-connector-notifications"
   NOTIFICATION_SUCCESS_ENABLED: "false"
-  NOTIFICATION_FAILURE_ENABLED: "true"
+  NOTIFICATION_FAILURE_ENABLED: "false"
   hostconfig:
-    host: ""
-    port: ""
+    host: "message-gateway"
+    port: "80"
   limits:
     memory: "512M"
     cpu: "500m"
@@ -495,7 +459,7 @@ notifications:
     cpu: "100m"
   ingress:
     enabled: false
-    path: "/notifications"
+    path: "/"
     annotations: {}
     backend: {}
   deployment:
@@ -504,17 +468,17 @@ notifications:
 zeebe_ops:
   enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-zeebe-ops"
   imageTag: "v1.0.1"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: ""
+  SPRING_PROFILES_ACTIVE: "bb"
   LOGGING_LEVEL_ROOT: "INFO"
-  hostname: ""
+  hostname: "ph-zeebeops-dev.openg2p.mosip.net"
   zeebe_broker_contactpoint: "zeebe-zeebe-gateway:26500"
   elasticsearch_contactpoint: "ph-ee-elasticsearch:9200"
   elasticsearch_sslverification: false
   elasticsearch_security_enabled: false
-  tenants: ""
+  tenants: "tn03,tn04"
   limits:
     memory: "512M"
     cpu: "500m"
@@ -523,7 +487,7 @@ zeebe_ops:
     cpu: "100m"
   ingress:
     enabled: false
-    path: "/zeebeops"
+    path: "/"
     annotations: {}
     backend: {}
   deployment:
@@ -532,17 +496,17 @@ zeebe_ops:
 importer_es:
   enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-importer-es"
   imageTag: "v1.2.1"
   imagePullPolicy: "Always"
   reporting:
-    enabled: false
+    enabled: true
     fields:
-      amount: false
-      accountId: false
+      amount: true
+      accountId: true
       errorCode: false
-      errorDescription: false
-      externalId: false
+      errorDescription: true
+      externalId: true
       initiator: false
       initiatorType: false
       isNotificationsFailureEnabled: false
@@ -551,13 +515,13 @@ importer_es:
       mpesaTransactionStatusRetryCount: false
       originDate: false
       partyLookupFailed: false
-      phoneNumber: false
+      phoneNumber: true
       processDefinitionKey: false
-      processInstanceKey: false
+      processInstanceKey: true
       scenario: false
       tenantId: false
       timer: false
-      timestamp: false
+      timestamp: true
       transactionFailed: false
       transactionId: false
       transferCreateFailed: false
@@ -598,8 +562,8 @@ kafka:
 
 importer_rdbms:
   enabled: true
-  replicas: 1
-  image: ""
+  replicas: 0
+  image: "lalithkota/ph-ee-importer-rdbms"
   imageTag: "v1.0.8"
   imagePullPolicy: "Always"
   LOGGING_LEVEL_ROOT: "INFO"
@@ -621,15 +585,15 @@ importer_rdbms:
   javaToolOptions: "-Xmx256M"
 
 connector_bulk:
-  enabled: false
+  enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-bulk-processor"
   imageTag: "v1.2.0"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: "default"
-  hostname: "bulk-connector.sandbox.fynarfin.io"
+  SPRING_PROFILES_ACTIVE: "bb"
+  hostname: "ph-bulk-dev.openg2p.mosip.net"
   zeebe_broker_contactpoint: "zeebe-zeebe-gateway:26500"
-  tenants: "ibank-usa,ibank-india"
+  tenants: "tn03,tn04"
   bucket_name: "paymenthub-ee-dev"
   operations_app:
       contactpoint: "https://ops-bk.sandbox.fynarfin.io/"
@@ -658,8 +622,8 @@ connector_bulk:
       success_rate: 95
   aws:
     region: "us-east-2"
-    access_key: "AKIAX32JM37TZOJ5AKFB"
-    secret_key: "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"
+    access_key: 'a'
+    secret_key: 'a'
   limits:
     memory: "990M"
     cpu: "512m"
@@ -668,14 +632,16 @@ connector_bulk:
     cpu: "100m"
   deployment:
     annotations: {}
+  ingress:
+    enabled: false
 
 ph_ee_connector_gsma:
-  enabled: false
+  enabled: true
   replicas: 1
-  image: ""
+  image: "lalithkota/ph-ee-connector-gsma-mm"
   imageTag: "v1.0.0"
   imagePullPolicy: "Always"
-  SPRING_PROFILES_ACTIVE: ""
+  SPRING_PROFILES_ACTIVE: "bb"
   limits:
     memory: "512M"
     cpu: "500m"
@@ -726,3 +692,6 @@ ph_ee_connector_slcb:
 wildcardhostname: ""
 
 tls: ""
+
+identity:
+  hostname: "ph-opsapp-dev.openg2p.mosip.net"

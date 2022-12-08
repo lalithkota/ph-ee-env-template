@@ -90,15 +90,5 @@ spec:
             value: "{{ .Values.importer_es.elasticsearch_security_enabled }}"
           - name: "ELASTICSEARCH_SSLVERIFICATION"
             value: "{{ .Values.importer_es.elasticsearch_sslverification }}"
-          - name: "ELASTICSEARCH_USERNAME"
-            valueFrom:
-              secretKeyRef:
-                name: elastic-credentials
-                key: username
-          - name: "ELASTICSEARCH_PASSWORD"
-            valueFrom:
-              secretKeyRef:
-                name: elastic-credentials
-                key: password
 
 {{- end }}

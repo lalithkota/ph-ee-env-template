@@ -1,6 +1,7 @@
 charts/
 helm/*.tgz
 .idea/
+.vscode/
 
 *.iml
 **/*.lock

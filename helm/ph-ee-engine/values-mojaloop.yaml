@@ -1,0 +1,65 @@
+central:
+  enabled: true
+
+ml-api-adapter:
+  enabled: true
+
+emailnotifier:
+  enabled: false
+
+account-lookup-service:
+  enabled: true
+
+quoting-service:
+  enabled: true
+
+transaction-requests-service:
+  enabled: true
+
+thirdparty:
+  enabled: false
+
+simulator:
+  enabled: false
+
+mojaloop-simulator:
+  enabled: false
+
+mojaloop-ttk-simulators:
+  enabled: false
+
+mojaloop-bulk:
+  enabled: false
+
+ml-testing-toolkit:
+  enabled: false
+
+ml-ttk-posthook-setup:
+  enabled: false
+
+ml-ttk-posthook-tests:
+  enabled: false
+
+ml-ttk-cronjob-tests:
+  enabled: false
+
+ml-ttk-test-setup:
+  enabled: false
+
+ml-ttk-test-val-gp:
+  enabled: false
+
+ml-ttk-test-val-bulk:
+  enabled: false
+
+ml-ttk-test-setup-tp:
+  enabled: false
+
+ml-ttk-test-val-tp:
+  enabled: false
+
+ml-ttk-test-setup-sdk-bulk:
+  enabled: false
+
+ml-ttk-test-val-sdk-bulk:
+  enabled: false

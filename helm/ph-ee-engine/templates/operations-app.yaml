@@ -32,6 +32,12 @@ spec:
               port: 5000
             periodSeconds: 30
             timeoutSeconds: 5
+          command:
+          - "java"
+          - "-Dchannel-connector.url=http://ph-ee-connector-channel"
+          - "-Dchannel-connector.transfer-path=/channel/transfer"
+          - "-jar"
+          - "operations-app-1.0.0-SNAPSHOT.jar"
           resources:
             limits:
               memory: "{{ .Values.operations_app.limits.memory }}"
