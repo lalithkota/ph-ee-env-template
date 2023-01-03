@@ -298,7 +298,7 @@ operations_web:
     annotations: {}
 
 identity:
-  hostname: ""
+  hostname: "ph-opsapp-dev.openg2p.mosip.net"
 
 mpesa:
   enabled: false
@@ -544,21 +544,35 @@ importer_es:
 
 kafka:
   enabled: true
-  replicas: 1
-  image: "spotify/kafka"
-  imagePullPolicy: "Always"
-  advertised:
-      host: "kafka"
-      port: "9092"
-  limits:
-    memory: "512M"
-    cpu: "500m"
-  requests:
-    memory: "512M"
-    cpu: "100m"
-  deployment:
-      annotations:
-        deployTime: "{{ .Values.deployTime }}"
+  fullnameOverride: "kafka"
+  logRetentionBytes: _1073741824
+  defaultReplicationFactor: 1
+  offsetsTopicReplicationFactor: 1
+  transactionStateLogReplicationFactor: 1
+  replicaCount: 1
+  autoCreateTopicsEnable: true
+  deleteTopicEnable: true
+
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 3Gi
+
+  zookeeper:
+    fullnameOverride: "zookeeper"
+    replicaCount: 1
+    persistence:
+      enabled: true
+      size: 3Gi
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
 
 importer_rdbms:
   enabled: true
@@ -692,6 +706,3 @@ ph_ee_connector_slcb:
 wildcardhostname: ""
 
 tls: ""
-
-identity:
-  hostname: "ph-opsapp-dev.openg2p.mosip.net"
